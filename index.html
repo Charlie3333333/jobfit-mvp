@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BestFit Application Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">BestFit Application Studio</p>
+            <h1>Find the strongest version of your experience for every role.</h1>
+          </div>
+          <button id="generateBtn" class="primary-button">Generate</button>
+        </header>
+
+        <section class="input-stack">
+          <div class="panel target-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Target Job</h2>
+                <span>Paste any job link</span>
+              </div>
+            </div>
+            <label class="job-link-field">
+              <span>Job Link</span>
+              <input
+                id="jobInput"
+                type="url"
+                inputmode="url"
+                spellcheck="false"
+                placeholder="https://company.com/careers/job-posting"
+              />
+            </label>
+            <p class="helper-text">
+              Paste a posting from Handshake, LinkedIn, a company career page, or any job board. The app will analyze the role focus from this link.
+            </p>
+          </div>
+
+          <div class="panel basic-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Basic Information</h2>
+                <span>Used for the resume header and education section</span>
+              </div>
+            </div>
+            <div class="basic-grid">
+              <label>
+                <span>Full Name</span>
+                <input id="fullNameInput" type="text" placeholder="Your Name" />
+              </label>
+              <label>
+                <span>Email</span>
+                <input id="emailInput" type="email" placeholder="name@email.com" />
+              </label>
+              <label>
+                <span>Phone</span>
+                <input id="phoneInput" type="tel" placeholder="(123) 456-7890" />
+              </label>
+              <label>
+                <span>Location</span>
+                <input id="profileLocationInput" type="text" placeholder="New York, NY" />
+              </label>
+              <label>
+                <span>Address</span>
+                <input id="addressInput" type="text" placeholder="Optional street address" />
+              </label>
+              <label>
+                <span>School</span>
+                <input id="schoolInput" type="text" placeholder="University Name" />
+              </label>
+              <label>
+                <span>Degree</span>
+                <input id="degreeInput" type="text" placeholder="Bachelor of Science" />
+              </label>
+              <label>
+                <span>Major</span>
+                <input id="majorInput" type="text" placeholder="Data Science" />
+              </label>
+              <label>
+                <span>Minor</span>
+                <input id="minorInput" type="text" placeholder="Computer Science" />
+              </label>
+              <label>
+                <span>GPA</span>
+                <input id="gpaInput" type="text" placeholder="3.8 / 4.0" />
+              </label>
+              <label>
+                <span>Graduation Date</span>
+                <input id="graduationInput" type="text" placeholder="May 2026" />
+              </label>
+              <label>
+                <span>LinkedIn / Portfolio</span>
+                <input id="portfolioInput" type="url" placeholder="https://linkedin.com/in/yourname" />
+              </label>
+              <label class="wide-field">
+                <span>Core Courses</span>
+                <input
+                  id="coreCoursesInput"
+                  type="text"
+                  placeholder="Data Analysis, Business Analytics, Python, Statistics..."
+                />
+              </label>
+            </div>
+          </div>
+
+          <div class="panel experience-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Your Experience Bank</h2>
+                <span>Add each experience separately</span>
+              </div>
+              <button id="addExperienceBtn" class="secondary-button" type="button">Add Experience</button>
+            </div>
+            <div id="experienceList" class="experience-list"></div>
+          </div>
+        </section>
+
+        <section class="output-grid">
+          <article class="panel wide">
+            <div class="panel-header">
+              <div>
+                <h2>Generated Resume</h2>
+                <span>Classic ATS-friendly template</span>
+              </div>
+              <div class="resume-actions">
+                <button id="editResumeBtn" class="secondary-button" type="button">Edit Resume</button>
+                <button id="saveResumeBtn" class="secondary-button" type="button">Save Edits</button>
+                <button id="regenerateResumeBtn" class="secondary-button" type="button">Regenerate Draft</button>
+                <button id="downloadResumeBtn" class="secondary-button" type="button">Download HTML</button>
+                <button id="printResumeBtn" class="secondary-button" type="button">Print / Save PDF</button>
+              </div>
+            </div>
+            <p id="saveStatus" class="save-status">Generated from your profile and selected experiences.</p>
+            <div id="generatedResume" class="resume-document"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <div>
+                <h2>Resume Header</h2>
+                <span>Basic information formatted for the application</span>
+              </div>
+            </div>
+            <div id="resumeHeader" class="resume-header-preview"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Job Focus</h2>
+                <span>What this role appears to value</span>
+              </div>
+            </div>
+            <div id="jobFocus" class="chips"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Experience Selection</h2>
+                <span>Which evidence should lead</span>
+              </div>
+            </div>
+            <div id="experienceSelection" class="stack"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <div>
+                <h2>Tailored Descriptions</h2>
+                <span>Role-specific rewrites without inventing facts</span>
+              </div>
+            </div>
+            <div id="tailoredDescriptions" class="stack"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-header">
+              <div>
+                <h2>Cover Letter Angle</h2>
+                <span>The story this application should tell</span>
+              </div>
+            </div>
+            <div id="coverLetter" class="letter"></div>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <template id="experienceTemplate">
+      <article class="experience-card">
+        <div class="experience-card-header">
+          <strong class="experience-title">Experience</strong>
+          <button class="icon-button remove-experience" type="button" aria-label="Remove experience">Remove</button>
+        </div>
+
+        <div class="form-grid">
+          <label>
+            <span>Position / Role</span>
+            <input class="field-role" type="text" placeholder="Marketing Intern" />
+          </label>
+          <label>
+            <span>Organization</span>
+            <input class="field-organization" type="text" placeholder="Company, club, school, nonprofit..." />
+          </label>
+          <label>
+            <span>Location</span>
+            <input class="field-location" type="text" placeholder="New York, NY / Remote" />
+          </label>
+          <label>
+            <span>Start Date</span>
+            <input class="field-start" type="text" placeholder="Jun 2025" />
+          </label>
+          <label>
+            <span>End Date</span>
+            <input class="field-end" type="text" placeholder="Aug 2025 / Present" />
+          </label>
+        </div>
+
+        <label class="description-label">
+          <span>Experience Description</span>
+          <textarea class="field-description" spellcheck="true" placeholder="Describe responsibilities, projects, tools, achievements, people served, results, or anything you want the system to consider."></textarea>
+        </label>
+      </article>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
