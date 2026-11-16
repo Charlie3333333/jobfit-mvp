@@ -1,3 +1,7 @@
+import { serverAuth } from "../../../lib/auth/server";
+import { authUser } from "../../../lib/auth/user";
+import { authEnabled } from "../../../lib/auth/config";
+
 const angleDefinitions = [
   {
     id: "analysis",
@@ -63,6 +67,12 @@ const angleDefinitions = [
 
 export async function POST(request) {
   try {
+    if (authEnabled) {
+      const client = await serverAuth();
+      if (!client) return Response.json({ error: "Sign-in service is not configured." }, { status: 503 });
+      const { data, error } = await authUser(client);
+      if (error || !data.user) return Response.json({ error: "Please sign in to analyze a job link." }, { status: 401 });
+    }
     const { url } = await request.json();
     if (!url) {
       return Response.json({ error: "Missing job link." }, { status: 400 });

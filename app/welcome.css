@@ -1,0 +1,70 @@
+.welcome { background: #fff; color: #1d1d1f; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.welcome a { text-decoration: none; }
+.welcome-skip { position: absolute; top: -60px; left: 20px; padding: 10px; background: #fff; z-index: 20; }
+.welcome-skip:focus { top: 8px; }
+.welcome-nav { height: 60px; max-width: 1120px; padding: 0 28px; margin: auto; display: flex; justify-content: space-between; align-items: center; }
+.welcome-logo { display: inline-flex; align-items: center; gap: 7px; font-size: 19px; font-weight: 700; color: #1d1d1f; }
+.welcome-logo svg { color: #287765; }
+.welcome-nav nav { display: flex; align-items: center; gap: 28px; font-size: 12px; }
+.welcome-nav-about { color: #6e6e73; }
+.welcome-nav-open { display: inline-flex; align-items: center; gap: 5px; color: #fff; background: #246a59; padding: 8px 14px; border-radius: 30px; }
+.welcome-hero { overflow: hidden; background: #f6f7f8; padding-top: 42px; }
+.welcome-intro { text-align: center; padding: 0 24px; animation: welcome-enter 800ms both; }
+.welcome-eyebrow { color: #74777b; font-size: 10px; font-weight: 650; line-height: 1.5; margin: 0 0 15px; }
+.welcome-hero h1 { max-width: none; font-size: 94px; line-height: 1; font-weight: 700; margin: 0; letter-spacing: 0; }
+.welcome-promise { margin: 16px 0 0; font-size: 29px; line-height: 1.15; font-weight: 600; }
+.welcome-description { color: #73777d; margin: 16px 0 20px; font-size: 15px; line-height: 1.5; }
+.welcome-primary { display: inline-flex; align-items: center; justify-content: center; gap: 12px; padding: 12px 21px; border-radius: 30px; background: #246a59; color: #fff; font-size: 13px; font-weight: 550; transition: background 180ms, transform 180ms; }
+.welcome-primary:hover, .welcome-nav-open:hover { background: #174f41; }
+.welcome-primary:hover { transform: translateY(-2px); }
+.welcome-product { margin: 34px auto 0; width: 1120px; max-width: 100%; height: 248px; overflow: hidden; animation: welcome-product-enter 1000ms 120ms both; }
+.welcome-product img { display: block; width: 100%; height: auto; object-fit: contain; }
+.welcome-process { padding: 84px 28px 80px; background: #fff; scroll-margin-top: 24px; }
+.welcome-section-heading { max-width: 1064px; margin: 0 auto; }
+.welcome-section-heading h2 { margin: 0; font-size: 44px; line-height: 1.15; font-weight: 650; }
+.welcome-section-heading > p:last-child { color: #777b7e; font-size: 17px; line-height: 1.65; margin: 23px 0 0; }
+.welcome-steps { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 48px; max-width: 1064px; margin: 55px auto 0; }
+.welcome-steps > div { border-top: 1px solid #dedfe1; padding-top: 20px; }
+.welcome-step-number { font-size: 11px; color: #969b9b; }
+.welcome-steps h3 { font-size: 21px; margin: 15px 0 10px; font-weight: 650; }
+.welcome-steps p { font-size: 15px; color: #7c7f83; line-height: 1.65; max-width: 270px; margin: 0; }
+.welcome-steps a { display: inline-flex; align-items: center; gap: 6px; color: #246a59; font-size: 13px; margin-top: 22px; }
+.welcome-closing { text-align: center; background: #f1f5f3; padding: 76px 24px 84px; }
+.welcome-closing h2 { font-size: 38px; font-weight: 650; line-height: 1.2; margin: 0 0 29px; }
+.welcome-footer { display: flex; align-items: center; gap: 24px; max-width: 1120px; margin: auto; padding: 28px; font-size: 11px; color: #969a9e; }
+.welcome-footer .welcome-logo { font-size: 15px; }
+.welcome-footer > a:last-child { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; color: #61686c; }
+@keyframes welcome-enter { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes welcome-product-enter { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
+@media (min-width: 1600px) { .welcome-product { width: 1260px; } }
+@media (min-width: 651px) and (max-height: 800px) {
+  .welcome-hero { padding-top: 24px; }
+  .welcome-hero h1 { font-size: 78px; }
+  .welcome-promise { font-size: 25px; }
+  .welcome-description { margin-block: 12px 16px; }
+  .welcome-product { height: 180px; margin-top: 22px; }
+  .welcome-process { padding-top: 42px; }
+}
+@media (max-width: 650px) {
+  .welcome-nav { height: 56px; padding: 0 20px; }
+  .welcome-nav nav { gap: 15px; }
+  .welcome-nav-about { display: none; }
+  .welcome-hero { padding-top: 40px; }
+  .welcome-hero h1 { font-size: 66px; }
+  .welcome-promise { font-size: 25px; margin-top: 18px; }
+  .welcome-description { font-size: 14px; }
+  .welcome-product { margin-top: 30px; height: 200px; width: 720px; max-width: none; position: relative; left: 50%; transform: translateX(-50%); animation: welcome-mobile-enter 900ms both; }
+  .welcome-product img { width: 720px; }
+  .welcome-process { padding: 49px 24px; }
+  .welcome-section-heading h2 { font-size: 31px; }
+  .welcome-section-heading > p:last-child { font-size: 15px; }
+  .welcome-section-heading br { display: none; }
+  .welcome-steps { grid-template-columns: 1fr; gap: 28px; margin-top: 35px; }
+  .welcome-steps p { max-width: none; }
+  .welcome-closing { padding: 55px 20px; }
+  .welcome-closing h2 { font-size: 29px; }
+  .welcome-footer { flex-wrap: wrap; gap: 14px; padding: 24px; }
+  .welcome-footer > span { width: 100%; order: 3; }
+}
+@keyframes welcome-mobile-enter { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .welcome-intro, .welcome-product { animation: none; } .welcome-primary { transition: none; } }

@@ -120,12 +120,12 @@ function ensureExperienceTemplate() {
   const template = document.createElement("template");
   template.id = "experienceTemplate";
   template.innerHTML = `
-    <article class="experience-card">
-      <div class="experience-card-header">
-        <strong class="experience-title">Experience</strong>
-        <button class="icon-button remove-experience" type="button" aria-label="Remove experience">Remove</button>
-      </div>
-
+    <details class="experience-card">
+      <summary class="experience-card-header">
+        <div class="experience-summary-copy"><strong class="experience-title">Experience</strong><span class="experience-meta"></span><p class="experience-excerpt"></p></div>
+        <span class="experience-expand-label">Edit</span>
+      </summary>
+      <div class="experience-editor">
       <div class="form-grid">
         <label>
           <span>Position / Role</span>
@@ -157,7 +157,9 @@ function ensureExperienceTemplate() {
           placeholder="Describe responsibilities, projects, tools, achievements, people served, results, or anything you want the system to consider."
         ></textarea>
       </label>
-    </article>
+      <div class="experience-footer"><button class="icon-button remove-experience" type="button" aria-label="Remove experience">Remove experience</button></div>
+      </div>
+    </details>
   `;
   document.body.appendChild(template);
   return template;
@@ -182,8 +184,10 @@ const tailoredDescriptions = document.querySelector("#tailoredDescriptions");
 const coverLetter = document.querySelector("#coverLetter");
 
 jobInput.value = sampleJob;
-const savedResumeKey = "bestfit.savedResumeHtml";
-const savedResumeEditedAtKey = "bestfit.savedResumeEditedAt";
+const accountId = document.querySelector(".app-shell").dataset.account;
+const storagePrefix = accountId ? `bestfit.account.${accountId}` : "bestfit";
+const savedResumeKey = `${storagePrefix}.savedResumeHtml`;
+const savedResumeEditedAtKey = `${storagePrefix}.savedResumeEditedAt`;
 let isEditingResume = false;
 let autoSaveTimer;
 
@@ -203,7 +207,7 @@ const profileFields = {
   coreCourses: document.querySelector("#coreCoursesInput"),
 };
 
-Object.entries(sampleProfile).forEach(([key, value]) => {
+Object.entries(accountId ? Object.fromEntries(Object.keys(sampleProfile).map(key => [key, ""])) : sampleProfile).forEach(([key, value]) => {
   if (profileFields[key]) {
     profileFields[key].value = value;
   }
@@ -213,11 +217,12 @@ const targetRoleInput = document.querySelector("#targetRoleInput");
 const companyInput = document.querySelector("#companyInput");
 const jobDescriptionInput = document.querySelector("#jobDescriptionInput");
 const workspaceStatus = document.querySelector("#workspaceStatus");
-const workspaceKey = "bestfit.workspace.v1";
+const workspaceKey = `${storagePrefix}.workspace.v1`;
 let letterEdited = false;
 let generationId = 0;
 
 function persistWorkspace() {
+  updateProfileSummary();
   try {
     localStorage.setItem(workspaceKey, JSON.stringify({
       profile: getProfile(), experiences: getExperiences(), job: jobInput.value,
@@ -228,6 +233,15 @@ function persistWorkspace() {
   } catch {
     workspaceStatus.textContent = "Browser storage is unavailable. Keep this page open and download your drafts.";
   }
+}
+
+function updateProfileSummary() {
+  const profile = getProfile();
+  const count = getExperiences().filter(item => item.role || item.organization || item.description).length;
+  document.querySelector("#profileSummaryName").textContent = profile.fullName || "Complete your profile";
+  const education = [profile.school, profile.major].filter(Boolean).join(" / ");
+  document.querySelector("#profileSummaryDetails").textContent =
+    [education, `${count} saved experience${count === 1 ? "" : "s"}`].filter(Boolean).join(" · ");
 }
 
 function escapeHtml(value) {
@@ -321,11 +335,15 @@ function addExperience(data = {}) {
   card.querySelector(".field-start").value = data.start || "";
   card.querySelector(".field-end").value = data.end || "";
   card.querySelector(".field-description").value = data.description || "";
+  card.open = !data.role && !data.organization && !data.description;
 
   const updateTitle = () => {
     const role = card.querySelector(".field-role").value.trim();
     const organization = card.querySelector(".field-organization").value.trim();
     card.querySelector(".experience-title").textContent = role || organization || "New Experience";
+    const dates = [card.querySelector(".field-start").value.trim(), card.querySelector(".field-end").value.trim()].filter(Boolean).join(" - ");
+    card.querySelector(".experience-meta").textContent = [organization, dates].filter(Boolean).join(" | ");
+    card.querySelector(".experience-excerpt").textContent = card.querySelector(".field-description").value.trim();
   };
 
   card.querySelectorAll("input, textarea").forEach((field) => {
@@ -465,7 +483,7 @@ function setResumeEditMode(shouldEdit) {
   isEditingResume = shouldEdit;
   generatedResume.contentEditable = shouldEdit ? "true" : "false";
   generatedResume.classList.toggle("is-editing", shouldEdit);
-  editResumeBtn.textContent = shouldEdit ? "Done Editing" : "Edit Resume";
+  editResumeBtn.querySelector("span").textContent = shouldEdit ? "Done Editing" : "Edit Resume";
   saveStatus.textContent = shouldEdit
     ? "Editing is on. Click any text in the resume, revise it, then save."
     : "Editing is off. Click Edit Resume to revise the generated version.";
@@ -655,7 +673,7 @@ function renderBullets(bullets) {
 async function generate(options = {}) {
   const shouldOverwriteResume = options.overwriteResume === true || !hasSavedResume();
   const requestId = ++generationId;
-  generateBtn.textContent = "Generating…";
+  generateBtn.querySelector("span").textContent = "Generating...";
   const profile = Object.fromEntries(Object.entries(getProfile()).map(([key, value]) => [key, escapeHtml(value)]));
   const experiences = getExperiences().map(experience => Object.fromEntries(Object.entries(experience).map(([key, value]) => [key, typeof value === "string" ? escapeHtml(value) : value])));
   const jobSignalText = getJobSignalText();
@@ -739,7 +757,7 @@ async function generate(options = {}) {
     letterEdited = false;
     document.querySelector("#letterStatus").textContent = "Draft ready. Personalize the opening and review all details before sending.";
   }
-  generateBtn.textContent = "Generate";
+  generateBtn.querySelector("span").textContent = "Generate application";
   persistWorkspace();
 }
 
@@ -762,6 +780,15 @@ regenerateResumeBtn.addEventListener("click", () => {
 downloadResumeBtn.addEventListener("click", downloadResumeHtml);
 printResumeBtn.addEventListener("click", () => window.print());
 generatedResume.addEventListener("input", scheduleAutoSave);
+window.addEventListener("bestfit:flush", () => {
+  clearTimeout(autoSaveTimer);
+  if (isEditingResume) saveResumeEdits();
+  persistWorkspace();
+});
+window.addEventListener("pagehide", () => {
+  clearTimeout(autoSaveTimer);
+  if (isEditingResume) saveResumeEdits();
+});
 document.querySelector(".input-stack").addEventListener("input", persistWorkspace);
 coverLetter.addEventListener("input", () => {
   letterEdited = true;
@@ -791,7 +818,8 @@ if (workspace && Array.isArray(workspace.experiences)) {
   workspace.experiences.forEach(addExperience);
   if (!experienceList.children.length) addExperience();
 } else {
-  sampleExperiences.forEach(addExperience);
+  if (accountId) addExperience();
+  else sampleExperiences.forEach(addExperience);
 }
 generate({ overwriteResume: !hasSavedResume() });
 restoreSavedResume();

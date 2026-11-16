@@ -1,1 +1,4 @@
 @import "../styles.css";
+@import "./workspace.css";
+@import "./welcome.css";
+@import "./auth/auth.css";
