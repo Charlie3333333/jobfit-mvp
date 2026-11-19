@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Welcome from "./Welcome";
+import ResumeImport from "./ResumeImport";
 import { browserAuth } from "../lib/auth/browser";
 import { authConfigured, authEnabled } from "../lib/auth/config";
 import { ArrowLeft, ArrowUpRight, BriefcaseBusiness, Check, ChevronDown, Download, FileText, FolderOpen, Layers, Pencil, Plus, Printer, RefreshCw, Save, Sparkles, UserRound } from "lucide-react";
@@ -163,7 +164,7 @@ export default function Workspace({ account }) {
                 <h2>Your Experience Bank</h2>
                 <span>Add each experience separately</span>
               </div>
-              <button id="addExperienceBtn" className="secondary-button" type="button"><Plus size={16} />Add Experience</button>
+              <div className="experience-actions"><ResumeImport /><button id="addExperienceBtn" className="secondary-button" type="button"><Plus size={16} />Add Experience</button></div>
             </div>
             <div id="experienceList" className="experience-list"></div>
           </div>
@@ -178,7 +179,7 @@ export default function Workspace({ account }) {
             <div className="panel-header">
               <div>
                 <h2>Resume</h2>
-                <span>Classic / Single column</span>
+                <span>Classic / One page</span>
               </div>
               <div className="resume-actions">
                 <button id="editResumeBtn" className="secondary-button" type="button"><Pencil size={15} /><span>Edit Resume</span></button>
@@ -190,6 +191,7 @@ export default function Workspace({ account }) {
               </div>
             </div>
             <p id="saveStatus" className="save-status" role="status">Draft ready.</p>
+            <p id="resumePageStatus" className="save-status" role="status"></p>
             <div className="paper-stage"><div id="generatedResume" className="resume-document"></div></div>
           </article>
 

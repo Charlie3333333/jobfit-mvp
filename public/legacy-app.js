@@ -1,3 +1,12 @@
+let resumePage;
+const resumePageReady = import("/resume-page.mjs").then(module => {
+  resumePage = module;
+  const style = document.createElement("style");
+  style.textContent = module.pageStyles();
+  document.head.appendChild(style);
+  return module;
+});
+
 const sampleExperiences = [
   {
     role: "Real Estate Operations Intern",
@@ -230,8 +239,10 @@ function persistWorkspace() {
       description: jobDescriptionInput.value, letter: coverLetter.value, letterEdited,
     }));
     workspaceStatus.textContent = "Profile, experiences and letter saved in this browser.";
+    return true;
   } catch {
     workspaceStatus.textContent = "Browser storage is unavailable. Keep this page open and download your drafts.";
+    return false;
   }
 }
 
@@ -391,6 +402,28 @@ function getExperiences() {
     .filter((experience) => experience.role || experience.organization || experience.description);
 }
 
+window.addEventListener("bestfit:import-experiences", event => {
+  const { entries, finish } = event.detail || {};
+  if (!Array.isArray(entries) || typeof finish !== "function") return;
+  const key = item => ["role", "organization", "location", "start", "end", "description"].map(field => String(item[field] || "").toLowerCase().replace(/\s+/g, " ").trim()).join("|");
+  const keys = new Set(getExperiences().map(key));
+  const addedCards = [];
+  let skipped = 0;
+  for (const item of entries) {
+    if (keys.has(key(item))) { skipped++; continue; }
+    keys.add(key(item));
+    addExperience(item);
+    addedCards.push(experienceList.lastElementChild);
+  }
+  if (!persistWorkspace()) {
+    addedCards.forEach(card => card.remove());
+    updateProfileSummary();
+    finish({ error: "Unable to save in this browser. No experiences were imported. Free some browser storage and try again." });
+    return;
+  }
+  finish({ added: addedCards.length, skipped });
+});
+
 function getProfile() {
   return Object.fromEntries(
     Object.entries(profileFields).map(([key, field]) => [key, field.value.trim()]),
@@ -432,16 +465,16 @@ function renderGeneratedResume(profile, ranked, angles) {
     </header>
 
     <section class="resume-template-section">
-      <h4>Education Background</h4>
+      <h4>Education</h4>
       <div class="resume-entry">
         <div class="resume-entry-top">
           <strong>${profile.school || "School Name"}</strong>
           <span>${profile.graduation || "Graduation Date"}</span>
         </div>
-        ${majorLine ? `<p class="resume-major-line"><em>${majorLine}</em></p>` : ""}
+        ${profile.degree || majorLine ? `<p class="resume-major-line"><em>${[profile.degree, majorLine].filter(Boolean).join(", ")}</em></p>` : ""}
         <ul class="resume-bullets education-bullets">
           ${profile.gpa ? `<li><strong>Overall GPA:</strong><span>${profile.gpa}</span></li>` : ""}
-          ${profile.coreCourses ? `<li><strong>Core Courses:</strong><span>${profile.coreCourses}</span></li>` : ""}
+          ${profile.coreCourses ? `<li data-core-courses><strong>Core Courses:</strong><span>${profile.coreCourses}</span></li>` : ""}
         </ul>
       </div>
     </section>
@@ -453,14 +486,14 @@ function renderGeneratedResume(profile, ranked, angles) {
           ? ranked
               .map(
                 (experience) => `
-                  <div class="resume-entry">
+                  <div class="resume-entry" data-experience-id="${experience.id}">
                     <div class="resume-entry-top">
-                      <strong>${experience.organization || experience.title}</strong>
-                      <span>${experience.dateRange || ""}</span>
+                      <strong>${conciseEscaped(experience.organization || experience.title, 100)}</strong>
+                      <span>${conciseEscaped(experience.location, 70)}</span>
                     </div>
                     <div class="resume-entry-sub">
-                      <em>${experience.role || "Role"}</em>
-                      <span>${experience.location || ""}</span>
+                      <em>${conciseEscaped(experience.role || "Role", 100)}</em>
+                      <span>${conciseEscaped(experience.dateRange, 50)}</span>
                     </div>
                     ${renderBullets(experience.bullets)}
                   </div>
@@ -477,7 +510,29 @@ function renderGeneratedResume(profile, ranked, angles) {
     </section>
   `;
   generatedResume.contentEditable = isEditingResume ? "true" : "false";
+  const layout = resumePage.fitGeneratedPage(generatedResume);
+  refreshPageStatus();
+  return layout.ids;
 }
+
+function refreshPageStatus() {
+  if (!resumePage) return false;
+  generatedResume.classList.add("one-page");
+  const { fits } = resumePage.measurePage(generatedResume);
+  generatedResume.classList.toggle("is-overflow", !fits);
+  downloadResumeBtn.disabled = !fits;
+  printResumeBtn.disabled = !fits;
+  const status = document.querySelector("#resumePageStatus");
+  status.textContent = fits ? "1 page / US Letter" : "Over one page. Shorten the draft before exporting. Your edits are preserved.";
+  status.classList.toggle("auth-error", !fits);
+  return fits;
+}
+
+const paperStage = generatedResume.parentElement;
+new ResizeObserver(() => {
+  const width = paperStage.clientWidth - parseFloat(getComputedStyle(paperStage).paddingLeft) - parseFloat(getComputedStyle(paperStage).paddingRight);
+  paperStage.style.setProperty("--paper-scale", Math.min(1, Math.max(.2, width / 816)));
+}).observe(paperStage);
 
 function setResumeEditMode(shouldEdit) {
   isEditingResume = shouldEdit;
@@ -491,6 +546,7 @@ function setResumeEditMode(shouldEdit) {
 
 function saveResumeEdits({ silent = false } = {}) {
   localStorage.setItem(savedResumeKey, generatedResume.innerHTML);
+  localStorage.setItem(`${savedResumeKey}.font`, generatedResume.style.getPropertyValue("--resume-font"));
   localStorage.setItem(savedResumeEditedAtKey, new Date().toISOString());
   if (!silent) {
     saveStatus.textContent = `Saved locally at ${formatTime(new Date())}.`;
@@ -501,11 +557,14 @@ function restoreSavedResume() {
   const saved = localStorage.getItem(savedResumeKey);
   if (!saved) return false;
   generatedResume.innerHTML = saved;
+  const savedFont = localStorage.getItem(`${savedResumeKey}.font`);
+  generatedResume.style.setProperty("--resume-font", savedFont === "14px" ? "14px" : "14.667px");
   generatedResume.contentEditable = "false";
   const savedAt = localStorage.getItem(savedResumeEditedAtKey);
   saveStatus.textContent = savedAt
     ? `Restored your last saved resume from ${formatTime(new Date(savedAt))}.`
     : "Restored your last saved resume from this browser.";
+  refreshPageStatus();
   return true;
 }
 
@@ -519,6 +578,7 @@ function formatTime(date) {
 
 function scheduleAutoSave() {
   if (!isEditingResume) return;
+  refreshPageStatus();
   saveStatus.textContent = "Saving...";
   clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(() => {
@@ -528,15 +588,8 @@ function scheduleAutoSave() {
 }
 
 function downloadResumeHtml() {
-  const documentHtml = `<!doctype html>
-<html>
-<head>
-  <meta charset="UTF-8" />
-  <title>Generated Resume</title>
-  <style>${getResumeExportStyles()}</style>
-</head>
-<body>${generatedResume.outerHTML}</body>
-</html>`;
+  if (!refreshPageStatus()) return;
+  const documentHtml = resumePage.exportPage(generatedResume);
   const blob = new Blob([documentHtml], { type: "text/html" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -582,8 +635,14 @@ function rewriteExperience(experience, angle) {
     sentence, index, score: scoreText(sentence, angle.terms),
   })).sort((a, b) => b.score - a.score || a.index - b.index).slice(0, 4).map(({sentence}) => ({
     heading: bulletHeading(selectBestAngle({ raw: sentence }, angleDefinitions)),
-    text: buildBulletText(experience, angle, sentence),
+    text: conciseEscaped(buildBulletText(experience, angle, sentence), 480),
   }));
+}
+
+function conciseEscaped(value, limit) {
+  const decoder = document.createElement("textarea");
+  decoder.innerHTML = value || "";
+  return escapeHtml(resumePage.conciseText(decoder.value, limit));
 }
 
 function renderFocusCard(angle, index) {
@@ -609,7 +668,7 @@ function renderExperienceMeta(experience) {
 function splitIntoSentences(text) {
   return text
     .split(/(?<=[.!?])\s+/)
-    .map((sentence) => sentence.trim().replace(/[.!?]$/, ""))
+    .map((sentence) => sentence.trim().replace(/^[\s•●▪◦❖*\-–]+/, "").replace(/[.!?]$/, ""))
     .filter(Boolean);
 }
 
@@ -671,16 +730,17 @@ function renderBullets(bullets) {
 }
 
 async function generate(options = {}) {
+  await resumePageReady;
   const shouldOverwriteResume = options.overwriteResume === true || !hasSavedResume();
   const requestId = ++generationId;
   generateBtn.querySelector("span").textContent = "Generating...";
-  const profile = Object.fromEntries(Object.entries(getProfile()).map(([key, value]) => [key, escapeHtml(value)]));
+  const profile = Object.fromEntries(Object.entries(getProfile()).map(([key, value]) => [key, escapeHtml(resumePage.conciseText(value, key === "coreCourses" ? 220 : key === "portfolio" || key === "address" ? 100 : 90))]));
   const experiences = getExperiences().map(experience => Object.fromEntries(Object.entries(experience).map(([key, value]) => [key, typeof value === "string" ? escapeHtml(value) : value])));
   const jobSignalText = getJobSignalText();
   const angles = (!jobDescriptionInput.value.trim() && options.analyzeLink && jobInput.value.trim()
     ? await fetchJobFocusFromApi(jobInput.value.trim()) : null) || detectAngles(jobSignalText);
   if (requestId !== generationId) return;
-  const ranked = experiences
+  let ranked = experiences
     .map((experience) => {
       const bestAngle = selectBestAngle(experience, angles);
       const relevance = scoreText(experience.raw, [
@@ -695,11 +755,13 @@ async function generate(options = {}) {
         bullets: rewriteExperience(experience, bestAngle),
       };
     })
-    .sort((a, b) => b.relevance - a.relevance);
+    .sort((a, b) => b.relevance - a.relevance)
+    .slice(0, 4);
 
   renderResumeHeader(profile);
   if (shouldOverwriteResume) {
-    renderGeneratedResume(profile, ranked, angles);
+    const selectedIds = renderGeneratedResume(profile, ranked, angles);
+    ranked = ranked.filter(experience => selectedIds.includes(experience.id));
     setResumeEditMode(false);
     saveStatus.textContent = "Generated a new resume. Edits will autosave while editing.";
   } else {
@@ -778,7 +840,24 @@ regenerateResumeBtn.addEventListener("click", () => {
   generate({ overwriteResume: true });
 });
 downloadResumeBtn.addEventListener("click", downloadResumeHtml);
-printResumeBtn.addEventListener("click", () => window.print());
+printResumeBtn.addEventListener("click", () => { if (refreshPageStatus()) window.print(); });
+window.addEventListener("beforeprint", () => {
+  document.querySelector("#print-resume-page")?.remove();
+  if (!resumePage) return;
+  if (refreshPageStatus()) {
+    const copy = generatedResume.cloneNode(true);
+    copy.id = "print-resume-page";
+    copy.contentEditable = "false";
+    copy.classList.remove("is-editing", "is-overflow");
+    document.body.appendChild(copy);
+  } else {
+    const warning = document.createElement("div");
+    warning.id = "print-resume-page";
+    warning.textContent = "This resume exceeds one page. Shorten it in BestFit before printing.";
+    document.body.appendChild(warning);
+  }
+});
+window.addEventListener("afterprint", () => document.querySelector("#print-resume-page")?.remove());
 generatedResume.addEventListener("input", scheduleAutoSave);
 window.addEventListener("bestfit:flush", () => {
   clearTimeout(autoSaveTimer);
